@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MOTO-YA app</title>
+<meta name="description" content="Catálogo de repuestos MOTO-YA para los vendedores de los móviles">
+<meta name="theme-color" content="#0c1626">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- PIN -->
+<section class="pin" id="pin" hidden>
+  <div class="pinbox">
+    <div class="logo"><img src="icons/logo.webp" alt="MOTO-YA! Las Mercedes"></div>
+    <h2>MOTO-YA <span>app</span></h2>
+    <p id="pinmsg">Escribe el PIN de 6 dígitos</p>
+    <div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="pinerr" id="pinerr" role="alert"></div>
+    <div class="keys" id="keys">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" class="k-alt" data-k="c">Borrar todo</button><button type="button" data-k="0">0</button><button type="button" class="k-alt" data-k="b" aria-label="Borrar">⌫</button>
+    </div>
+  </div>
+</section>
+
+<div id="app" hidden>
+<header class="hero">
+  <div class="brandrow">
+    <div class="logo"><img alt="MOTO-YA! Las Mercedes" src="icons/logo.webp"></div>
+    <div class="brandtxt"><h1>MOTO-YA <span>app</span></h1></div>
+    <button class="cotbtn" id="botcot" type="button" aria-pressed="false">Cotización <span class="badge" id="nbadge">0</span></button>
+    <label class="veh" for="veh">Voy en <select id="veh"></select></label>
+    <div class="netrow">
+      <span class="net" id="net"></span>
+      <span id="corte"></span>
+      <span class="descarga" id="descarga"></span>
+      <button type="button" class="instalar" id="instalar" hidden>Instalar app</button>
+    </div>
+  </div>
+</header>
+<div class="top"><div class="topin">
+  <div class="searchbox">
+    <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="Repuesto, moto o código">
+    <button class="clear" id="clr" type="button" aria-label="Borrar búsqueda">×</button>
+  </div>
+  <button class="cotbtn mini" id="botcot2" type="button" aria-label="Ver cotización" hidden>Cotización <span class="badge" id="nbadge2">0</span></button>
+</div></div>
+<section class="filters"><div class="topin">
+  <div class="step"><div class="steplabel"><span class="n">1</span>Familia de repuesto<span class="pick" id="p1"></span><button type="button" id="reset" hidden>Limpiar filtros</button></div><div class="chips" id="c1" role="group" aria-label="Familia de repuesto"></div></div>
+  <div class="step"><div class="steplabel"><span class="n">2</span>Marca de la moto<span class="pick" id="p2"></span></div><div class="chips" id="c2" role="group" aria-label="Marca de la moto"></div></div>
+  <div class="step"><div class="steplabel"><span class="n">3</span>Modelo de la moto<span class="pick" id="p3"></span></div><div class="chips" id="c3" role="group" aria-label="Modelo de la moto"></div></div>
+</div></section>
+<main><div class="wrap">
+  <div id="ficha" hidden></div>
+  <div class="count" id="count" aria-live="polite"></div>
+  <div id="list" style="display:grid;gap:12px"></div>
+  <div id="cotiz" hidden></div>
+</div></main>
+<footer id="foot"></footer>
+</div>
+
+<div class="carga" id="carga">Cargando MOTO-YA app…</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<section class="visor" id="visor" hidden><div class="wrap"><p>Mantén el dedo sobre la imagen y elige <b>Compartir imagen</b> o <b>Descargar imagen</b>. Luego envíala por WhatsApp.</p><img id="visorimg" alt="Cotización para enviar"><button class="btn" id="cerrarvisor" type="button">Cerrar</button></div></section>
+<section class="zoom" id="zoom" hidden><div class="zimg"><img id="zoomimg" alt=""></div><div><div class="ztxt" id="zoomtxt"></div><button class="btn" id="cerrarzoom" type="button" style="margin-top:12px">Cerrar</button></div></section>
+<div class="updbar" id="updbar" hidden><span>Hay una versión nueva de la app</span><button type="button" id="updbtn">Actualizar</button></div>
+
+<script src="app.js"></script>
+</body>
+</html>

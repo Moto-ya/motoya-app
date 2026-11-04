@@ -1,0 +1,76 @@
+/* Agregados de MOTO-YA app: PIN, fotos, validación, ficha de la moto, instalación y actualización */
+.hero h1 small{display:block;font:600 13px var(--body);letter-spacing:.12em;color:var(--muted);text-shadow:none;margin-top:4px}
+.netrow{grid-area:sub;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:12px;color:var(--muted)}
+.net{display:inline-flex;align-items:center;gap:5px;font-weight:600}
+.net::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.net.on::before{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.net.off::before{background:var(--warn)}
+.instalar{border:1px solid var(--orange);background:rgba(255,143,32,.1);color:var(--orange);font:700 13px var(--body);border-radius:999px;padding:6px 12px;cursor:pointer}
+
+/* Pantalla del PIN */
+.pin{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px));
+  background:radial-gradient(120% 60% at 50% 0%,#163057 0%,#0a1528 45%,#060c17 100%) var(--bg);overflow-y:auto}
+.pinbox{width:100%;max-width:340px;display:grid;gap:18px;justify-items:center;text-align:center}
+.pinbox .logo{width:112px;height:112px;border-radius:26px;background:#fff;display:grid;place-items:center;box-shadow:0 10px 24px rgba(0,0,0,.5)}
+.pinbox .logo img{width:100px}
+.pinbox h2{margin:0;font:700 30px/1 var(--display);text-transform:uppercase;letter-spacing:.03em}
+.pinbox h2 span{color:var(--orange)}
+.pinbox p{margin:0;color:var(--muted);font-size:15px}
+.dots{display:flex;gap:12px;justify-content:center;min-height:22px}
+.dots i{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);background:transparent;transition:background-color .1s,transform .1s}
+.dots i.on{background:var(--orange);border-color:var(--orange);box-shadow:0 0 10px rgba(255,143,32,.5)}
+.dots.err{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.pinerr{color:var(--bad);font-weight:600;min-height:20px;font-size:15px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%}
+.keys button{height:66px;border-radius:20px;border:1px solid var(--glassline);background:linear-gradient(180deg,#24395d,#162641);color:var(--ink);
+  font:700 30px var(--display);cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);touch-action:manipulation}
+.keys button:active{transform:scale(.95)}
+.keys button.k-alt{font:600 15px var(--body);background:transparent;border-color:transparent;box-shadow:none;color:var(--muted)}
+
+/* Carga */
+.carga{display:grid;place-items:center;gap:10px;padding:60px 16px;color:var(--muted);text-align:center}
+
+/* Foto en la tarjeta */
+.foto{position:relative;display:grid;place-items:center;background:#fff;border-radius:16px;height:190px;overflow:hidden;border:0;padding:0;cursor:zoom-in;width:100%}
+.foto img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.foto .refb{position:absolute;right:8px;bottom:8px;font:600 11px var(--body);color:#7a4a12;background:#fff3e3;border:1px solid #f0c48e;border-radius:999px;padding:2px 8px}
+.foto.sin{background:rgba(0,0,0,.22);border:1px dashed var(--line);cursor:default;height:96px;color:var(--faint);font-size:14px}
+.provline{font:500 13px var(--mono);color:var(--muted)}
+.provline b{color:var(--ink);font-weight:600}
+
+/* Estado de validación: bien visible */
+.valban{display:flex;gap:10px;align-items:flex-start;border-radius:14px;padding:10px 12px;font-size:15px;line-height:1.3}
+.valban .ic{flex:0 0 auto;font:700 18px/1 var(--body);margin-top:1px}
+.valban b{display:block;font:700 13px var(--body);letter-spacing:.06em;text-transform:uppercase}
+.valban.ok{background:rgba(78,226,143,.1);border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);color:#c9f5dc}
+.valban.ok b,.valban.ok .ic{color:var(--ok)}
+.valban.warn{background:rgba(255,191,60,.12);border:2px solid var(--warn);color:#ffe9b8}
+.valban.warn b,.valban.warn .ic{color:var(--warn)}
+.valban.pend{background:rgba(255,191,60,.07);border:2px dashed var(--warn);color:#ffe9b8}
+.valban.pend b,.valban.pend .ic{color:var(--warn)}
+
+/* Ficha de la moto */
+.ficha{border-radius:18px;padding:12px 14px;background:linear-gradient(165deg,#1c3154,#0e1b33);border:1px solid color-mix(in srgb,var(--blue) 45%,transparent);box-shadow:0 8px 20px rgba(0,0,0,.4);display:grid;gap:8px}
+.ficha h3{margin:0;font:700 20px var(--display);text-transform:uppercase;letter-spacing:.02em}
+.ficha h3 span{color:var(--blue)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.fgrid div{background:rgba(0,0,0,.25);border:1px solid var(--glassline);border-radius:12px;padding:6px 10px}
+.fgrid span{display:block;font:700 10px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fgrid b{font:700 20px var(--display);font-variant-numeric:tabular-nums}
+.fgrid b.nd{font:500 14px var(--body);color:var(--faint);font-style:italic}
+.ficha p{margin:0;font-size:12px;color:var(--faint)}
+
+/* Visor de foto ampliada */
+.zoom{position:fixed;inset:0;z-index:45;background:rgba(3,7,14,.97);display:grid;grid-template-rows:1fr auto;gap:12px;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(20px + env(safe-area-inset-bottom,0px))}
+.zoom .zimg{background:#fff;border-radius:18px;display:grid;place-items:center;overflow:hidden;min-height:0}
+.zoom img{max-width:100%;max-height:100%;object-fit:contain}
+.zoom .ztxt{text-align:center;font:700 20px var(--display);text-transform:uppercase}
+.zoom .ztxt small{display:block;font:500 13px var(--body);color:var(--muted);text-transform:none;margin-top:4px}
+.zoom .btn{background:var(--ink);color:var(--bg)}
+
+/* Aviso de versión nueva */
+.updbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:35;display:flex;gap:10px;align-items:center;justify-content:space-between;
+  background:var(--blue);color:#04152b;border-radius:16px;padding:10px 12px 10px 16px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:656px;margin:0 auto}
+.updbar button{border:0;border-radius:999px;background:#04152b;color:#fff;font:700 15px var(--body);padding:10px 16px;cursor:pointer}
+.descarga{font-size:12px;color:var(--muted)}
