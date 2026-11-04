@@ -1,4 +1,4 @@
-{"v":"20261103204547","corte":"3 de noviembre de 2026, 20:45","veh":["MOTOCARRO R2","MOTOCARRO WALLY","VAN REPUESTERA"],
+{"v":"20261103215816","corte":"3 de noviembre de 2026, 21:58","veh":["MOTOCARRO R2","MOTOCARRO WALLY","VAN REPUESTERA"],
 "p":[
 {"c":"R016","cp":"19521","d":"PASTILLA FRENO DEL NARITA AK-110/125 SL/NKD (1017728)","mk":"NARITA","pr":"UND","venta":7000,"promo":6700,"f":"PASTILLAS DE FRENO","ojo":"Pastilla DELANTERA (freno de disco)","est":"SIN VALIDAR","ap":[["AKT","AK 110 S","",""],["AKT","AK 125 SL","",""],["AKT","NKD 125","",""]],"st":{"b":0,"m":[8,0,0],"g":["B1","",""]},"img":"R016.webp"},
 {"c":"R027","cp":"22572","d":"PASTILLA FRENO DEL NARITA NMAX 150/CRYPTON T115 FI (1017788)","mk":"NARITA","pr":"UND","venta":7000,"promo":6700,"f":"PASTILLAS DE FRENO","ojo":"Pastilla DELANTERA (freno de disco)","est":"SIN VALIDAR","ap":[["YAMAHA","CRYPTON 115 FI","",""],["YAMAHA","N-MAX 155","",""]],"st":{"b":0,"m":[5,0,0],"g":["C1","",""]},"img":"R027.webp"},
