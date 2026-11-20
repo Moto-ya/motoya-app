@@ -3,12 +3,12 @@
 "use strict";
 
 // ===== Configuración =====
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const PIN_HASH = "d9dc1d069210e0fa428d740fb83898d455ffef12eda8627c0b1563d32ce56e45"; // SHA-256 de "MOTO-YA|" + PIN
 const PIN_SALT = "MOTO-YA|";
 const IMG_CACHE = "motoya-img-v1";
 
-const FAM_ORDER=["PASTILLAS DE FRENO","BANDAS DE FRENO","KIT DE ARRASTRE","BATERÍA","LLANTA","NEUMÁTICO","FILTRO DE AIRE","FILTRO DE ACEITE","GUAYA CLUTCH","GUAYA ACELERADOR","GUAYA FRENO","MANIGUETA","CUNAS DE DIRECCIÓN","CORREA DE TRANSMISIÓN","BUJÍA","BALINERA","BOMBILLO","DIRECCIONAL","ESPEJO","REPOSAPIÉ","IMPERMEABLE","ACEITE DE MOTOR","LIMPIEZA Y CUIDADO"];
+const FAM_ORDER=["SERVICIOS","PASTILLAS DE FRENO","BANDAS DE FRENO","KIT DE ARRASTRE","BATERÍA","LLANTA","NEUMÁTICO","FILTRO DE AIRE","FILTRO DE ACEITE","GUAYA CLUTCH","GUAYA ACELERADOR","GUAYA FRENO","MANIGUETA","CUNAS DE DIRECCIÓN","CORREA DE TRANSMISIÓN","BUJÍA","BALINERA","BOMBILLO","DIRECCIONAL","ESPEJO","REPOSAPIÉ","IMPERMEABLE","ACEITE DE MOTOR","LIMPIEZA Y CUIDADO"];
 const BRAND_ORDER=["BAJAJ","AKT","YAMAHA","HONDA","SUZUKI","TVS","HERO","KAWASAKI","AUTECO","KYMCO","BRONCO","TONGKO","JIALING","QINGQI","VICTORY"];
 
 // ===== Utilidades =====
@@ -77,17 +77,17 @@ async function cargarDatos(){
   return r.json();
 }
 function prepararDatos(db){
-  DB=db;VEH=db.veh||[];DATA=db.p||[];
+  DB=db;VEH=db.veh||[];DATA=(db.p||[]).concat(serviciosComoProductos(db));
   MODS=new Map((db.m||[]).map(m=>[m[0]+"|"+m[1],m]));
   DATA.forEach(p=>{
     p.uni=p.ap.some(a=>a[0]==="UNIVERSAL");
     p.brands=[...new Set(p.ap.map(a=>a[0]).filter(b=>b!=="UNIVERSAL"))];
-    p.hay=" "+nk(p.c)+" "+nk(p.cp)+" "+norm([p.d,p.f,p.mk,p.cp,...p.ap.map(a=>a[0]+" "+a[1])].join(" ")).replace(/[-/.,()]/g," ")+" "+p.ap.map(a=>nk(a[1])).join(" ");
+    p.hay=" "+nk(p.c)+" "+nk(p.cp)+" "+norm([p.d,p.f,p.mk,p.cp,p.inc||"",p.fams||"",...p.ap.map(a=>a[0]+" "+a[1])].join(" ")).replace(/[-/.,()]/g," ")+" "+p.ap.map(a=>nk(a[1])).join(" ");
   });
   BYC=new Map(DATA.map(p=>[p.c,p]));
 }
 const vi=v=>VEH.indexOf(v);
-function stockDe(p,v){if(v==="BODEGA")return p.st.b||0;const i=vi(v);return i<0?0:(p.st.m[i]||0)}
+function stockDe(p,v){if(v==="BODEGA")return p.st.b||0;const i=vi(v);return (i<0?0:(p.st.m[i]||0))-vendidoLocal(p.c,v)}
 function gavetaDe(p,v){const i=vi(v);return i<0?"":(p.st.g[i]||"")}
 
 // Guarda las fotos en el celular para verlas sin internet
@@ -159,6 +159,7 @@ function fotoHtml(p){
 }
 
 function card(p){
+  if(p.srv)return cardServicio(p);
   const v=state.veh,mine=stockDe(p,v),bod=p.st.b||0;
   let loc;
   if(v==="BODEGA"){const e=VEH.map((x,i)=>[x,p.st.g[i]]).filter(x=>x[1]);loc=e.length?'<div class="loc" style="font-size:18px">'+e.map(([x,g])=>esc(title(x))+": "+esc(g)).join("<br>")+'</div>':(bod>0?'<div class="loc">Bodega física</div>':'<div class="loc pend">No hay en bodega</div>')}
@@ -233,7 +234,7 @@ function guardarCot(){ls.set("motoya-cot",JSON.stringify(COT));marcarBotonCot()}
 const enCot=c=>COT.items.find(x=>x.c===c);
 function marcarBotonCot(){const n=COT.items.length;$("nbadge").textContent=n;$("nbadge2").textContent=n;$("botcot").setAttribute("aria-pressed",verCot?"true":"false");$("botcot").setAttribute("aria-label","Cotización, "+n+(n===1?" producto":" productos"))}
 function totalesCot(){let tr=0,ef=0,und=0;COT.items.forEach(x=>{tr+=x.venta*x.q;ef+=x.promo*x.q;und+=x.q});return{tr,ef,ahorro:tr-ef,und}}
-function stockAviso(p,q){if(state.veh==="BODEGA")return"";const m=stockDe(p,state.veh),b=p.st.b||0;
+function stockAviso(p,q){if(state.veh==="BODEGA"||!p||p.srv)return"";const m=stockDe(p,state.veh),b=p.st.b||0;
   if(q<=m)return"";return m>0?`Solo tienes ${m} en tu vehículo${b?` (en bodega hay ${b})`:""}.`:`No tienes en tu vehículo${b?`; en bodega hay ${b}`:""}.`}
 
 function addHtml(p){
@@ -285,6 +286,7 @@ function pintarCot(){
     </div>
     <div class="bloque totales" id="ctot"></div>
     <div class="acciones">
+      <button class="btn venta grande" id="cventa" type="button">Registrar venta (recibo)</button>
       <button class="btn wa" id="cimg" type="button">Enviar cotización como imagen</button>
       <a class="btn wa2" id="cwa" target="_blank" rel="noopener">Enviar cotización por WhatsApp</a>
       <button class="btn copiar" id="ccop" type="button">Copiar cotización</button>
@@ -294,6 +296,7 @@ function pintarCot(){
   $("ccli").addEventListener("input",e=>{COT.cliente=e.target.value;guardarCot();refrescarCot()});
   $("cases").addEventListener("input",e=>{COT.asesor=e.target.value;ls.set("motoya-asesor",COT.asesor);guardarCot();refrescarCot()});
   $("ccop").onclick=()=>copiar(textoCot(),"Cotización copiada");
+  $("cventa").onclick=()=>abrirCobro("R");
   $("cimg").onclick=()=>enviarImagen(dibujarCot,"Cotizacion_MOTO-YA_"+hoy().replace(/\//g,"-"),"Cotización MOTO-YA");
   $("cvac").onclick=e=>{const b=e.currentTarget;
     if(!b.dataset.ok){b.dataset.ok="1";b.textContent="Toca otra vez para vaciar todo";b.classList.add("confirmar");setTimeout(()=>{if(b.isConnected){delete b.dataset.ok;b.textContent="Vaciar cotización";b.classList.remove("confirmar")}},4000);return}
@@ -452,8 +455,9 @@ function conectarEventos(){
   $("cerrarzoom").onclick=cerrarZoom;
   $("zoom").addEventListener("click",e=>{if(e.target===$("zoom"))cerrarZoom()});
   window.addEventListener("popstate",()=>{if(!$("zoom").hidden)$("zoom").hidden=true});
+  sel.addEventListener("change",()=>{if(typeof calcVendido==="function")calcVendido()});
 
-  const net=()=>{const on=navigator.onLine;$("net").className="net "+(on?"on":"off");$("net").textContent=on?"Con internet":"Sin internet"};
+  const net=()=>{const on=navigator.onLine;["net","hnet"].forEach(id=>{const e=$(id);if(e){e.className="net "+(on?"on":"off");e.textContent=on?"Con internet":"Sin internet"}})};
   window.addEventListener("online",()=>{net();guardarFotos()});window.addEventListener("offline",net);net();
 }
 function abrirZoom(c){const p=BYC.get(c);if(!p||!p.img)return;$("zoomimg").src="img/"+p.img;$("zoomimg").alt=p.d;
@@ -485,6 +489,7 @@ async function revisarDatos(){
 }
 function aplicarDatos(db,avisar){
   prepararDatos(db);cargarCot();
+  if(typeof iniciarVentas==="function"&&VENTAS_OK){prepararVentas(db);if(VISTA==="home")pintarHome();if(VISTA==="vtnd")pintarTienda()}
   $("corte").textContent="Precios y existencias al "+db.corte;
   $("foot").innerHTML="MOTO-YA app v"+APP_VERSION+" · Datos del SAM al "+esc(db.corte)+" · "+DATA.length+" productos.<br>Si algo no cuadra, confírmalo antes de vender.";
   const antes=ls.get("motoya-dv");ls.set("motoya-dv",db.v);
@@ -494,7 +499,8 @@ function aplicarDatos(db,avisar){
 }
 
 // ===== Inicio =====
-(async function iniciar(){
+let VENTAS_OK=false;
+async function iniciar(){
   registrarSW();
   await pedirPin();
   $("carga").hidden=false;$("carga").textContent="Cargando catálogo…";
@@ -503,7 +509,10 @@ function aplicarDatos(db,avisar){
   catch(e){$("carga").innerHTML="<b>No se pudieron cargar los datos.</b><br>Abre la app una vez con internet para descargarlos.";return}
   COT.asesor=ls.get("motoya-asesor")||"";
   prepararDatos(db);conectarEventos();
-  $("carga").hidden=true;$("app").hidden=false;
+  $("carga").hidden=true;
   aplicarDatos(db,false);
   if(!COT.asesor){COT.asesor=ls.get("motoya-asesor")||""}
-})();
+  iniciarVentas();VENTAS_OK=true;
+}
+// Arranca cuando ya se cargaron todos los scripts (app.js y ventas.js)
+document.addEventListener("DOMContentLoaded",iniciar);
