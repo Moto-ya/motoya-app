@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="ventas.css">
 </head>
 <body>
 
@@ -47,7 +48,8 @@
     </div>
   </div>
 </header>
-<div class="top"><div class="topin">
+<div class="top"><div class="topin conmenu">
+  <button type="button" class="menubtn" id="toMenu" aria-label="Volver al menú">☰ Menú</button>
   <div class="searchbox">
     <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="Repuesto, moto o código">
     <button class="clear" id="clr" type="button" aria-label="Borrar búsqueda">×</button>
@@ -68,6 +70,56 @@
 <footer id="foot"></footer>
 </div>
 
+
+<!-- MENÚ PRINCIPAL -->
+<section class="home" id="home" hidden><div class="homein">
+  <div class="hhead">
+    <div class="logo"><img src="icons/logo.webp" alt="MOTO-YA! Las Mercedes"></div>
+    <div><h1>MOTO-YA <span>app</span></h1><span class="net" id="hnet"></span></div>
+  </div>
+  <div class="hsel">
+    <label><span>Voy en</span><select id="hveh"></select></label>
+    <label><span>Ruta de hoy</span><select id="hruta"></select></label>
+    <label><span>Asesor</span><input id="hases" type="text" autocomplete="off" placeholder="Tu nombre"></label>
+  </div>
+  <div class="hpend" id="hpend" hidden></div>
+  <button type="button" class="mod rep" id="goRep">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M31.5 6.5a10 10 0 0 0-12.2 12.9L6.8 31.9a3.5 3.5 0 0 0 0 5l4.3 4.3a3.5 3.5 0 0 0 5 0l12.5-12.5A10 10 0 0 0 41.5 16.5l-6.3 6.3-5.6-1.5-1.5-5.6z" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round"/><circle cx="11.5" cy="36.5" r="1.8" fill="currentColor"/></svg>
+    <span><b>Repuestos y Servicios</b><small>Catálogo, cotizaciones, ventas y mano de obra</small></span>
+  </button>
+  <button type="button" class="mod tnd" id="goTnd">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 18 10 8h28l3 10M7 18v22h34V18M7 18c0 3 2.5 5 5.5 5S18 21 18 18c0 3 2.5 5 6 5s6-2 6-5c0 3 2.5 5 5.5 5S41 21 41 18M19 40V30h10v10" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <span><b>Tienda</b><small id="goTndNota">Bebidas, snacks y varios</small></span>
+  </button>
+  <div class="hgrid">
+    <button type="button" id="goRec"><b>Recibos de hoy</b><span><i id="bRecN">0</i> · <i id="bRecT">$0</i></span></button>
+    <button type="button" id="goCli"><b>Clientes</b><span>Por guardar <i class="badge" id="bCliN">0</i></span></button>
+    <button type="button" id="goCie" class="cie"><b>Cierre del día</b><span>Enviar al SAM</span></button>
+  </div>
+  <p class="hcorte" id="hcorte"></p>
+</div></section>
+
+<!-- TIENDA -->
+<section class="vtienda" id="vtnd" hidden>
+  <div class="top"><div class="topin conmenu">
+    <button type="button" class="menubtn" id="ttoMenu">☰ Menú</button>
+    <div class="searchbox"><input id="tq" type="search" autocomplete="off" placeholder="Buscar en la tienda"></div>
+  </div></div>
+  <div class="wrap">
+    <h2 class="vtit">Tienda <span id="tveh"></span></h2>
+    <p class="vsub" id="thoy"></p>
+    <div class="chips tcats" id="tcats"></div>
+    <div class="tgrid" id="tlist"></div>
+  </div>
+  <div class="tbar" id="tbar" hidden><span id="tbarTxt"></span><button type="button" class="btn gris" id="tbarVaciar">Vaciar</button><button type="button" class="btn venta" id="tbarVer">Cobrar</button></div>
+</section>
+
+<section class="vista" id="vcob" hidden></section>
+<section class="vista" id="vrec" hidden></section>
+<section class="vista" id="vlist" hidden></section>
+<section class="vista" id="vcli" hidden></section>
+<section class="vista" id="vcie" hidden></section>
+
 <div class="carga" id="carga">Cargando MOTO-YA app…</div>
 <div class="toast" id="toast" role="status" hidden></div>
 <section class="visor" id="visor" hidden><div class="wrap"><p>Mantén el dedo sobre la imagen y elige <b>Compartir imagen</b> o <b>Descargar imagen</b>. Luego envíala por WhatsApp.</p><img id="visorimg" alt="Cotización para enviar"><button class="btn" id="cerrarvisor" type="button">Cerrar</button></div></section>
@@ -75,5 +127,6 @@
 <div class="updbar" id="updbar" hidden><span>Hay una versión nueva de la app</span><button type="button" id="updbtn">Actualizar</button></div>
 
 <script src="app.js"></script>
+<script src="ventas.js"></script>
 </body>
 </html>
