@@ -55,7 +55,9 @@
     <button class="clear" id="clr" type="button" aria-label="Borrar búsqueda">×</button>
   </div>
   <button class="cotbtn mini" id="botcot2" type="button" aria-label="Ver cotización" hidden>Cotización <span class="badge" id="nbadge2">0</span></button>
-</div></div>
+</div>
+  <div class="modbar"><button type="button" id="rVentas">📋 Ventas de hoy</button><button type="button" id="rCierre" class="cie">✅ Cierre del día</button></div>
+</div>
 <section class="filters"><div class="topin">
   <div class="step"><div class="steplabel"><span class="n">1</span>Familia de repuesto<span class="pick" id="p1"></span><button type="button" id="reset" hidden>Limpiar filtros</button></div><div class="chips" id="c1" role="group" aria-label="Familia de repuesto"></div></div>
   <div class="step"><div class="steplabel"><span class="n">2</span>Marca de la moto<span class="pick" id="p2"></span></div><div class="chips" id="c2" role="group" aria-label="Marca de la moto"></div></div>
@@ -94,7 +96,8 @@
   <div class="hgrid">
     <button type="button" id="goRec"><b>Recibos de hoy</b><span><i id="bRecN">0</i> · <i id="bRecT">$0</i></span></button>
     <button type="button" id="goCli"><b>Clientes</b><span>Por guardar <i class="badge" id="bCliN">0</i></span></button>
-    <button type="button" id="goCie" class="cie"><b>Cierre del día</b><span>Enviar al SAM</span></button>
+    <button type="button" id="goHis"><b>Historial</b><span>Cierres y resumen del mes</span></button>
+    <button type="button" id="goCie" class="cie"><b>Cierre del día</b><span>Repuestos y tienda, por separado</span></button>
   </div>
   <p class="hcorte" id="hcorte"></p>
 </div></section>
@@ -104,7 +107,9 @@
   <div class="top"><div class="topin conmenu">
     <button type="button" class="menubtn" id="ttoMenu">☰ Menú</button>
     <div class="searchbox"><input id="tq" type="search" autocomplete="off" placeholder="Buscar en la tienda"></div>
-  </div></div>
+  </div>
+  <div class="modbar"><button type="button" id="tVentas">📋 Ventas de hoy</button><button type="button" id="tCierre" class="cie">✅ Cierre del día</button></div>
+  </div>
   <div class="wrap">
     <h2 class="vtit">Tienda <span id="tveh"></span></h2>
     <p class="vsub" id="thoy"></p>
@@ -119,6 +124,8 @@
 <section class="vista" id="vlist" hidden></section>
 <section class="vista" id="vcli" hidden></section>
 <section class="vista" id="vcie" hidden></section>
+<section class="vista" id="vsel" hidden></section>
+<section class="vista" id="vhis" hidden></section>
 
 <div class="carga" id="carga">Cargando MOTO-YA app…</div>
 <div class="toast" id="toast" role="status" hidden></div>
