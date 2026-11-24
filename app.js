@@ -3,7 +3,7 @@
 "use strict";
 
 // ===== Configuración =====
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 const PIN_HASH = "d9dc1d069210e0fa428d740fb83898d455ffef12eda8627c0b1563d32ce56e45"; // SHA-256 de "MOTO-YA|" + PIN
 const PIN_SALT = "MOTO-YA|";
 const IMG_CACHE = "motoya-img-v1";
