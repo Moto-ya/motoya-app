@@ -140,3 +140,14 @@
 .tbox b{font:700 34px/1.05 var(--display);text-align:right}
 .tbox.tr{background:linear-gradient(180deg,#2f74d0,#1d55a6);color:#fff}
 .cprecio.fijo b{display:flex;align-items:center;height:46px;font:700 24px var(--display)}
+
+/* 1.2: barra de cada módulo, cierre por módulo e historial */
+.modbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:var(--maxw,1100px);margin:8px auto 0;padding:0 max(16px,env(safe-area-inset-left,0px))}
+.modbar button{height:42px;border-radius:999px;border:1px solid var(--glassline);background:linear-gradient(180deg,#24395d,#162641);color:var(--ink);font:700 14px var(--body);cursor:pointer}
+.modbar button.cie{border-color:var(--ok);color:var(--ok)}
+.selcie h3{margin:0}
+.paso2{border:2px dashed var(--line)}
+.hisl{display:grid;gap:6px}
+.hisi{display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:6px;font-size:15px}
+.hisi .malo,.prow .malo{color:var(--warn)}.hisi .bien,.prow .bien{color:var(--ok)}
+.hgrid .cie{grid-column:auto}
