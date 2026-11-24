@@ -53,7 +53,7 @@ const vendidoLocal=(c,v)=>VEND.get(v+"|"+c)||0;
 function stockT(t,v){const i=TV.indexOf(v);return (i<0?0:(+t.st[i]||0))-vendidoLocal(t.c,v)}
 
 // ===== Navegación entre pantallas =====
-const VISTAS=["home","app","vtnd","vcob","vrec","vlist","vcli","vcie"];
+const VISTAS=["home","app","vtnd","vcob","vrec","vlist","vcli","vcie","vsel","vhis"];
 function verSinHist(id){VISTAS.forEach(x=>{const e=$(x);if(e)e.hidden=x!==id});VISTA=id;window.scrollTo(0,0);
   if(id==="home")pintarHome();if(id==="app"){render();if(verCot)pintarCot()}if(id==="vtnd")pintarTienda()}
 function ver(id,reemplazar){verSinHist(id);try{(reemplazar?history.replaceState:history.pushState).call(history,{v:id},"")}catch(e){}}
@@ -62,7 +62,7 @@ window.addEventListener("popstate",e=>{if(!$("zoom").hidden||!$("visor").hidden)
 
 // ===== Menú principal =====
 function rutaHoy(){const g=jget(VST.ruta,null);if(g&&g.f===hoyISO()&&g.r)return g.r;return RDIA[DIAS[new Date().getDay()]]||""}
-function pendientesCierre(veh){const hoy=hoyISO(),f=new Set();RECS.forEach(r=>{if(r.veh===veh&&!r.cer&&r.f<hoy)f.add(r.f)});return[...f].sort()}
+function pendientesCierre(veh,mod){const hoy=hoyISO(),f=new Set();RECS.forEach(r=>{if(r.veh===veh&&!r.cer&&r.f<hoy&&(!mod||r.mod===mod))f.add(r.f)});return[...f].sort()}
 function pintarHome(){
   const hv=$("hveh");
   if(!hv.options.length){hv.innerHTML='<option value="">Elige el móvil</option>'+VEH.map(v=>`<option value="${esc(v)}">${esc(title(v))}</option>`).join("")}
@@ -79,9 +79,9 @@ function pintarHome(){
   const hoy=hoyISO(),rh=RECS.filter(x=>x.veh===veh&&x.f===hoy&&!x.an);
   $("bRecN").textContent=rh.length;$("bRecT").textContent=money(rh.reduce((a,x)=>a+x.tot,0));
   const pc=CLIS.filter(c=>!c.g).length;$("bCliN").textContent=pc;$("bCliN").hidden=!pc;
-  const pend=veh?pendientesCierre(veh):[];
+  const pend=veh?modsDe(veh).map(m=>[m,pendientesCierre(veh,m)]).filter(x=>x[1].length):[];
   $("hpend").hidden=!pend.length;
-  if(pend.length)$("hpend").innerHTML=`⚠ Falta enviar el cierre del ${pend.map(fdm).join(", ")}. <button type="button" id="hpendBtn">Hacer cierre</button>`;
+  if(pend.length)$("hpend").innerHTML="⚠ Falta enviar "+pend.map(([m,d])=>"el cierre de "+(m==="T"?"tienda":"repuestos")+" del "+d.map(fdm).join(", ")).join(" y ")+'. <button type="button" id="hpendBtn">Hacer cierre</button>';
   $("hcorte").textContent=DB?"Datos del SAM al "+DB.corte:"";
 }
 function elegirVeh(v){state.veh=v;ls.set("motoya-veh",v);const s=$("veh");if(s)s.value=v;calcVendido()}
@@ -339,82 +339,113 @@ const recPorN=n=>RECS.find(r=>r.n===n);
 function enviarRecibo(n){const r=recPorN(n);if(r)enviarImagen(()=>dibujarRecibo(r),"Recibo_"+r.n,"Recibo MOTO-YA "+r.n)}
 
 // ===== Recibos del día =====
-let LISTF=null,ANULAR=null;
+// ===== Ventas del día (lista) =====
+// LISTMOD: null = todos los módulos (menú, con anulación) · "R"/"T" = solo ese módulo (encabezado, solo consulta)
+let LISTF=null,ANULAR=null,LISTMOD=null,LISTRO=false,LISTBACK="home";
+function abrirVentas(mod,ro,back){if(necesitaVeh())return;LISTF=null;ANULAR=null;LISTMOD=mod;LISTRO=ro;LISTBACK=back;pintarLista();ver("vlist")}
 function pintarLista(){
-  const veh=state.veh,f=LISTF||hoyISO();
-  const fechas=[...new Set(RECS.filter(r=>r.veh===veh).map(r=>r.f).concat([hoyISO()]))].sort().reverse();
-  const rs=RECS.filter(r=>r.veh===veh&&r.f===f).sort((a,b)=>b.ts-a.ts);
-  const ok=rs.filter(r=>!r.an),tot=ok.reduce((a,r)=>a+r.tot,0);
+  const veh=state.veh,f=LISTF||hoyISO(),deMod=r=>!LISTMOD||r.mod===LISTMOD;
+  const fechas=[...new Set(RECS.filter(r=>r.veh===veh&&deMod(r)).map(r=>r.f).concat([hoyISO()]))].sort().reverse();
+  const rs=RECS.filter(r=>r.veh===veh&&r.f===f&&deMod(r)).sort((a,b)=>b.ts-a.ts);
+  const s=resumenDia(veh,f,LISTMOD);
+  const tit=LISTMOD?"Ventas de hoy":"Recibos";
   $("vlist").innerHTML=`<div class="wrap vwrap">
-    <button type="button" class="volver" data-volver="home">← Menú</button>
-    <h2 class="vtit">Recibos <span>${esc(title(veh))}</span></h2>
+    <button type="button" class="volver" data-volver="${LISTBACK}">← ${LISTBACK==="home"?"Menú":"Volver"}</button>
+    <h2 class="vtit">${tit} <span>${LISTMOD?esc(MOD_NOM[LISTMOD]):esc(title(veh))}</span></h2>
+    ${LISTMOD?`<p class="vsub">${esc(title(veh))} · solo consulta</p>`:""}
     <label class="campo"><span>Día</span><select id="listf">${fechas.map(x=>`<option value="${x}"${x===f?" selected":""}>${fdm(x)}${x===hoyISO()?" (hoy)":""}</option>`).join("")}</select></label>
-    <div class="bloque"><div class="prow"><span>${ok.length} recibo${ok.length===1?"":"s"}${rs.length>ok.length?" · "+(rs.length-ok.length)+" anulado(s)":""}</span><b>${money(tot)}</b></div></div>
+    <div class="bloque">
+      <div class="prow"><span>${s.n} venta${s.n===1?"":"s"}${s.an?" · "+s.an+" anulada(s)":""}</span><b class="grande">${money(s.tot)}</b></div>
+      ${LISTMOD==="R"?`<div class="prow"><span>Repuestos</span><b>${money(s.R)}</b></div><div class="prow"><span>Servicios</span><b>${money(s.S)}</b></div>`:""}
+      ${!LISTMOD?`<div class="prow"><span>Repuestos y servicios</span><b>${money(s.R+s.S)}</b></div><div class="prow"><span>Tienda</span><b>${money(s.T)}</b></div>`:""}
+      ${PAGOS.map(p=>`<div class="prow"><span>${sc(p)}</span><b>${money(s.pago[p]||0)}</b></div>`).join("")}
+    </div>
     <div class="recs">${rs.length?rs.map(r=>`
       <div class="reci${r.an?" anul":""}">
         <div class="rech"><b>${esc(r.n)}</b><span>${r.h} · ${sc(r.pago)}</span><b>${money(r.tot)}</b></div>
-        <div class="recm">${r.mod==="T"?"Tienda":"Repuestos/servicios"}${r.cli||r.tel?" · "+esc(r.cli||"")+" "+telFmt(r.tel):""}</div>
+        ${!LISTMOD||r.cli||r.tel?`<div class="recm">${!LISTMOD?(r.mod==="T"?"Tienda":"Repuestos/servicios"):""}${r.cli||r.tel?(!LISTMOD?" · ":"")+esc(r.cli||"")+" "+telFmt(r.tel):""}</div>`:""}
         <div class="recm">${r.it.map(x=>x.q+"× "+esc(x.d)).join(" · ")}</div>
-        ${r.an?`<div class="malo">ANULADO: ${esc(r.mot)}</div>`:`
+        ${r.an?`<div class="malo">ANULADO: ${esc(r.mot)}</div>`:(LISTRO?"":`
         <div class="clib">${r.mod==="T"?"":`<button type="button" class="btn mini wa" data-recimg="${esc(r.n)}">Enviar imagen</button>`}
           ${r.cer?'<span class="nota">Ya salió en el cierre</span>':`<button type="button" class="btn mini rojo" data-anular="${esc(r.n)}">Anular</button>`}</div>
         ${ANULAR===r.n?`<div class="anubox"><label class="campo mini"><span>Motivo de la anulación</span><input id="anumot" type="text" placeholder="Ej. el cliente se arrepintió" autocomplete="off"></label>
-          <button type="button" class="btn mini rojo" data-anularok="${esc(r.n)}">Confirmar anulación</button><button type="button" class="btn mini gris" data-anularno>Cancelar</button></div>`:""}`}
-      </div>`).join(""):'<div class="empty">No hay recibos este día.</div>'}</div>
+          <button type="button" class="btn mini rojo" data-anularok="${esc(r.n)}">Confirmar anulación</button><button type="button" class="btn mini gris" data-anularno>Cancelar</button></div>`:""}`)}
+      </div>`).join(""):'<div class="empty">No hay ventas este día.</div>'}</div>
   </div>`;
 }
 
-// ===== Cierre del día =====
-let CIEF=null;
-function resumenDia(veh,f){
-  const rs=RECS.filter(r=>r.veh===veh&&r.f===f),ok=rs.filter(r=>!r.an);
+// ===== Cierre del día (uno por módulo) =====
+let CIEF=null,CIEMOD="R",CIEBACK="home",CIEPEND=null;
+const modsDe=veh=>TV.includes(veh)?["R","T"]:["R"];
+const claveCie=(veh,f,mod)=>veh+"|"+f+"|"+mod;
+function resumenDia(veh,f,mod){
+  const rs=RECS.filter(r=>r.veh===veh&&r.f===f&&(!mod||r.mod===mod)),ok=rs.filter(r=>!r.an);
   const s={rs,ok,n:ok.length,an:rs.length-ok.length,R:0,S:0,T:0,pago:{EFECTIVO:0,NEQUI:0,DAVIPLATA:0},sin:0,tot:0};
   ok.forEach(r=>{r.it.forEach(x=>{s[x.t]+=x.q*x.p;if(x.sin)s.sin++});s.pago[r.pago]=(s.pago[r.pago]||0)+r.tot;s.tot+=r.tot});
   return s;
 }
-function pintarCierre(){
-  const veh=state.veh,pend=pendientesCierre(veh),f=CIEF||(pend[0]||hoyISO());
-  const fechas=[...new Set(pend.concat([hoyISO()]))].sort();
-  const s=resumenDia(veh,f),k=veh+"|"+f,prev=CIES[k];
-  const sinCerrar=s.rs.filter(r=>!r.cer).length;
-  $("vcie").innerHTML=`<div class="wrap vwrap">
+// Menú › Cierre del día: elegir el módulo
+function pintarSelCierre(){
+  const veh=state.veh,hoy=hoyISO();
+  $("vsel").innerHTML=`<div class="wrap vwrap">
     <button type="button" class="volver" data-volver="home">← Menú</button>
     <h2 class="vtit">Cierre del día <span>${esc(title(veh))}</span></h2>
-    <label class="campo"><span>Día</span><select id="cief">${fechas.map(x=>`<option value="${x}"${x===f?" selected":""}>${fdm(x)}${x===hoyISO()?" (hoy)":" · pendiente"}</option>`).join("")}</select></label>
-    ${prev&&prev.fin?`<p class="nota ${sinCerrar?"malo":"bien"}">${sinCerrar?"⚠ Ya se envió un cierre de este día, pero hay "+sinCerrar+" recibo(s) nuevos: vuelve a enviarlo.":"✓ Cierre enviado el "+fdm(prev.fecha)+" a las "+prev.hora+". Puedes reenviarlo si hace falta."}</p>`:""}
+    <p class="vsub">Cada módulo se cierra por separado, con su propia entrega de efectivo.</p>
+    ${modsDe(veh).map(m=>{const s=resumenDia(veh,hoy,m),p=pendientesCierre(veh,m).filter(x=>x<hoy),c=CIES[claveCie(veh,hoy,m)];
+      const sinCerrar=s.rs.some(r=>!r.cer);
+      return `<div class="bloque selcie">
+        <h3>${esc(MOD_NOM[m])}</h3>
+        <div class="prow"><span>Hoy: ${s.n} venta${s.n===1?"":"s"}</span><b>${money(s.tot)}</b></div>
+        ${p.length?`<p class="nota malo">⚠ Falta el cierre del ${p.map(fdm).join(", ")}</p>`:""}
+        ${c&&c.fin&&!sinCerrar?`<p class="nota bien">✓ Cierre de hoy enviado a las ${c.hora}</p>`:""}
+        <button type="button" class="btn venta" data-abrircie="${m}">Hacer cierre de ${m==="T"?"la tienda":"repuestos y servicios"}</button>
+      </div>`}).join("")}
+  </div>`;
+}
+function abrirCierre(mod,back){if(necesitaVeh())return;if(mod==="T"&&!TV.includes(state.veh)){aviso("Este móvil no tiene tienda");return}
+  CIEF=null;CIEMOD=mod;CIEBACK=back;CIEPEND=null;pintarCierre();ver("vcie")}
+function pintarCierre(){
+  const veh=state.veh,mod=CIEMOD,pend=pendientesCierre(veh,mod),f=CIEF||(pend.find(x=>x<hoyISO())||hoyISO());
+  const fechas=[...new Set(pend.concat([hoyISO(),f]))].sort();
+  const s=resumenDia(veh,f,mod),prev=CIES[claveCie(veh,f,mod)];
+  const sinCerrar=s.rs.filter(r=>!r.cer).length;
+  $("vcie").innerHTML=`<div class="wrap vwrap">
+    <button type="button" class="volver" data-volver="${CIEBACK}">← ${CIEBACK==="home"?"Menú":"Volver"}</button>
+    <h2 class="vtit">Cierre <span>${esc(MOD_NOM[mod])}</span></h2>
+    <p class="vsub">${esc(title(veh))}</p>
+    <label class="campo"><span>Día</span><select id="cief">${fechas.map(x=>`<option value="${x}"${x===f?" selected":""}>${fdm(x)}${x===hoyISO()?" (hoy)":(pend.includes(x)?" · pendiente":"")}</option>`).join("")}</select></label>
+    ${prev&&prev.fin?`<p class="nota ${sinCerrar?"malo":"bien"}">${sinCerrar?"⚠ Ya se envió un cierre de este día, pero hay "+sinCerrar+" venta(s) nuevas: vuelve a enviarlo.":"✓ Cierre enviado el "+fdm(prev.fecha)+" a las "+prev.hora+". Puedes reenviarlo si hace falta."}</p>`:""}
     <div class="bloque">
       <h3>Ventas del día</h3>
-      <div class="prow"><span>Recibos</span><b>${s.n}${s.an?" (+"+s.an+" anulados)":""}</b></div>
-      <div class="prow"><span>Repuestos</span><b>${money(s.R)}</b></div>
-      <div class="prow"><span>Servicios</span><b>${money(s.S)}</b></div>
-      <div class="prow"><span>Tienda</span><b>${money(s.T)}</b></div>
-      <div class="tbox tr"><span>Total vendido</span><b>${money(s.tot)}</b></div>
-    </div>
-    <div class="bloque">
-      <h3>Por medio de pago</h3>
+      <div class="prow"><span>Ventas</span><b>${s.n}${s.an?" (+"+s.an+" anuladas)":""}</b></div>
+      ${mod==="R"?`<div class="prow"><span>Repuestos</span><b>${money(s.R)}</b></div><div class="prow"><span>Servicios</span><b>${money(s.S)}</b></div>`:""}
       ${PAGOS.map(p=>`<div class="prow"><span>${sc(p)}</span><b>${money(s.pago[p]||0)}</b></div>`).join("")}
+      <div class="tbox tr"><span>Total vendido</span><b>${money(s.tot)}</b></div>
       ${s.sin?`<p class="nota malo">⚠ ${s.sin} línea(s) vendidas sin existencia en el sistema: revísalas en el conteo.</p>`:""}
     </div>
     <div class="bloque">
       <h3>Entrega de efectivo</h3>
       <label class="campo"><span>Efectivo que entrego ($)</span><input id="cieef" type="text" inputmode="numeric" placeholder="${Math.round(s.pago.EFECTIVO||0)}" value="${prev&&prev.ef!=null?prev.ef:""}"></label>
       <p class="nota" id="ciedif"></p>
-      <label class="campo"><span>Observaciones</span><input id="cieobs" type="text" placeholder="Ej. pagué parqueadero con la caja" value="${esc(prev?prev.obs||"":"")}" autocomplete="off"></label>
-      <p class="nota">Si pagaste gastos con la caja, regístralos en el SAM (GASTOS, "sale de la caja: SI"); el arqueo los descuenta.</p>
+      <label class="campo"><span>Observaciones</span><input id="cieobs" type="text" placeholder="${mod==="T"?"Ej. compré hielo con la caja":"Ej. pagué parqueadero con la caja"}" value="${esc(prev?prev.obs||"":"")}" autocomplete="off"></label>
+      <p class="nota">${mod==="T"?"Si compraste mercancía de tienda con la caja, queda en la hoja TIENDA del SAM y el arqueo de la tienda la descuenta.":"Si pagaste gastos con la caja, regístralos en el SAM (GASTOS, «sale de la caja: SI»); el arqueo los descuenta."}</p>
     </div>
-    <button type="button" class="btn venta grande" id="cieenv" ${s.rs.length?"":"disabled"}>Enviar cierre por WhatsApp</button>
+    <button type="button" class="btn venta grande" id="cieenv" ${s.rs.length?"":"disabled"}>Enviar cierre (imagen + archivo)</button>
+    ${CIEPEND?`<div class="bloque paso2"><h3>Si no llegaron los dos, envíalos por separado</h3>
+      <button type="button" class="btn wa paso" id="ciepimg"><i>1</i>Enviar la imagen del cierre</button>
+      <button type="button" class="btn wa2 paso" id="ciepfile"><i>2</i>Enviar el archivo para el SAM</button></div>`:""}
     <button type="button" class="btn gris" id="cieresp" ${s.rs.length?"":"disabled"}>Enviar respaldo (sin cerrar el día)</button>
-    <p class="nota">El cierre es un archivo. En WhatsApp elige el chat de MOTO-YA (Antonio). En el SAM se carga con el botón «Importar cierres».</p>
+    <p class="nota">En WhatsApp elige el chat del administrador. La imagen es para leer; el archivo se carga en el SAM con «Importar cierres».</p>
   </div>`;
   difCierre();
 }
-function difCierre(){const veh=state.veh,f=$("cief").value,s=resumenDia(veh,f),v=$("cieef").value.replace(/\D/g,"");
+function difCierre(){const s=resumenDia(state.veh,$("cief").value,CIEMOD),v=$("cieef").value.replace(/\D/g,"");
   const el=$("ciedif");if(!v){el.textContent="Efectivo de ventas: "+money(s.pago.EFECTIVO||0);el.className="nota";return}
   const d=+v-(s.pago.EFECTIVO||0);el.textContent=d===0?"✓ Cuadra con el efectivo vendido":(d<0?"Faltan "+money(-d):"Sobran "+money(d))+" frente al efectivo vendido ("+money(s.pago.EFECTIVO||0)+")";
   el.className="nota "+(d===0?"bien":"malo")}
-function archivoCierre(veh,f,fin,ef,obs){
-  const s=resumenDia(veh,f),L=["MOTOYA-CIERRE;1"],now=new Date();
-  L.push(["CIERRE",veh,f,limpio(rutaHoy()),limpio(ls.get("motoya-asesor")||""),fin?1:0,ef===""?"":ef,limpio(obs),iso(now)+" "+horaAhora(),APP_VERSION].join(";"));
+function archivoCierre(veh,f,mod,fin,ef,obs){
+  const s=resumenDia(veh,f,mod),L=["MOTOYA-CIERRE;1"],now=new Date();
+  L.push(["CIERRE",veh,f,limpio(rutaHoy()),limpio(ls.get("motoya-asesor")||""),fin?1:0,ef===""?"":ef,limpio(obs),iso(now)+" "+horaAhora(),APP_VERSION,mod].join(";"));
   const tels=new Set();
   s.rs.forEach(r=>{
     L.push(["R",r.n,r.f,r.h,r.veh,limpio(r.ruta),r.pago,limpio(r.cli),r.tel||"",r.an?1:0,limpio(r.mot),limpio(r.ases),r.mod].join(";"));
@@ -424,20 +455,137 @@ function archivoCierre(veh,f,fin,ef,obs){
   CLIS.filter(c=>tels.has(c.tel)).forEach(c=>L.push(["C",c.tel,limpio(c.nom),c.f1,c.fu,c.veh].join(";")));
   return L.join("\r\n")+"\r\n";
 }
+function fotoCierre(veh,f,mod,ef,obs,fin){
+  const s=resumenDia(veh,f,mod);
+  return{veh,f,mod,fin,fecha:hoyISO(),hora:horaAhora(),ef:ef===""?null:+ef,obs:limpio(obs),ases:(ls.get("motoya-asesor")||"").trim(),ruta:rutaHoy(),
+    n:s.n,an:s.an,tot:s.tot,R:s.R,S:s.S,T:s.T,pago:{...s.pago},sin:s.sin,dif:ef===""?null:(+ef-(s.pago.EFECTIVO||0))};
+}
+async function compartir(files,titulo){
+  try{if(navigator.canShare&&navigator.canShare({files})){await navigator.share({files,title:titulo});return"ok"}}
+  catch(e){return e&&e.name==="AbortError"?"cancelado":"error"}
+  return"no";
+}
+function descargar(file){const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove()}
+async function archivosCierre(fin){
+  const veh=state.veh,f=$("cief").value,ef=$("cieef").value.replace(/\D/g,""),obs=$("cieobs").value,mod=CIEMOD;
+  const base=`CIERRE_${vcod(veh)}_${mod==="T"?"TIENDA":"REPUESTOS"}_${f}${fin?"":"_respaldo"}`;
+  const txt=new File([archivoCierre(veh,f,mod,fin,ef,obs)],base+".txt",{type:"text/plain"});
+  const snap=fotoCierre(veh,f,mod,ef,obs,fin);
+  const blob=await new Promise(ok=>dibujarCierre(snap).toBlob(ok,"image/png"));
+  const png=new File([blob],base+".png",{type:"image/png"});
+  return{veh,f,mod,ef,obs,txt,png,snap};
+}
+function marcarCerrado(a){
+  RECS.forEach(r=>{if(r.veh===a.veh&&r.f===a.f&&r.mod===a.mod)r.cer=true});guardarRecs();
+  CIES[claveCie(a.veh,a.f,a.mod)]=a.snap;guardarCies();
+}
+let CIEARCH=null;
 async function enviarCierre(fin){
-  const veh=state.veh,f=$("cief").value,ef=$("cieef").value.replace(/\D/g,""),obs=$("cieobs").value;
+  const ef=$("cieef").value.replace(/\D/g,"");
   if(fin&&ef===""){aviso("Escribe el efectivo que entregas (0 si no hay)",3500);$("cieef").focus();return}
-  const nombre=`CIERRE_${vcod(veh)}_${f}${fin?"":"_respaldo"}.txt`;
-  const file=new File([archivoCierre(veh,f,fin,ef,obs)],nombre,{type:"text/plain"});
-  let enviado=false;
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:nombre,text:(fin?"Cierre ":"Respaldo ")+title(veh)+" "+fdm(f)});enviado=true}}
-  catch(e){if(e&&e.name==="AbortError"){aviso("No se envió");return}}
-  if(!enviado){const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=nombre;document.body.appendChild(a);a.click();a.remove();enviado=true;aviso("Archivo descargado: envíalo por WhatsApp",4000)}
-  if(fin){
-    RECS.forEach(r=>{if(r.veh===veh&&r.f===f)r.cer=true});guardarRecs();
-    CIES[veh+"|"+f]={fin:true,fecha:hoyISO(),hora:horaAhora(),ef:+ef,obs:limpio(obs)};guardarCies();
-    CIEF=f;pintarCierre();aviso("Cierre enviado ✓",3000);
-  }
+  const a=await archivosCierre(fin);
+  if(!fin){const r=await compartir([a.txt],a.txt.name);if(r==="no"||r==="error"){descargar(a.txt);aviso("Respaldo descargado: envíalo por WhatsApp",4000)}else if(r==="ok")aviso("Respaldo enviado");return}
+  CIEARCH=a;
+  const r=await compartir([a.png,a.txt],a.txt.name);
+  if(r==="cancelado"){aviso("No se envió");return}
+  marcarCerrado(a);CIEF=a.f;
+  CIEPEND=true;                         // siempre se ofrece el envío por separado por si WhatsApp no tomó los dos
+  if(r!=="ok"){aviso("Envíalos por separado con los botones 1 y 2",4500)}else aviso("Cierre enviado ✓",3000);
+  pintarCierre();
+}
+async function enviarParte(cual){
+  let a=CIEARCH;if(!a){a=await archivosCierre(true);marcarCerrado(a);CIEARCH=a}
+  const file=cual==="img"?a.png:a.txt,r=await compartir([file],file.name);
+  if(r==="no"||r==="error"){descargar(file);aviso("Archivo descargado: envíalo por WhatsApp",4000)}
+}
+
+// ===== Imágenes del cierre y del mes =====
+function tarjeta(o){
+  // o: {t1,t2,lineas:[der], datos:[[k,v,clase]], total:[k,v], tabla:{cab:[],filas:[[...]]}, pie}
+  return lienzo((ctx,cv,draw)=>{
+    const W=1080,M=60,H=cv.height;
+    const txt=(s,x,y,font,col,al)=>{ctx.font=font;if(draw){ctx.fillStyle=col;ctx.textAlign=al||"left";ctx.fillText(s,x,y);ctx.textAlign="left"}};
+    if(draw){ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=NAVY;ctx.beginPath();ctx.moveTo(300,0);ctx.lineTo(W,0);ctx.lineTo(W,120);ctx.bezierCurveTo(820,70,560,40,300,0);ctx.fill();
+      ctx.strokeStyle=ORANGE;ctx.lineWidth=14;ctx.beginPath();ctx.moveTo(250,-8);ctx.bezierCurveTo(540,46,810,92,W+10,146);ctx.stroke()}
+    const cx=M+120,cy=200,R=125,logo=document.querySelector("#home .logo img")||document.querySelector(".hero .logo img");
+    if(draw){ctx.save();ctx.shadowColor="rgba(0,0,0,.25)";ctx.shadowBlur=24;ctx.shadowOffsetY=8;ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();ctx.restore();
+      ctx.strokeStyle=NAVY;ctx.lineWidth=7;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+      ctx.strokeStyle=ORANGE;ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R-10,0,7);ctx.stroke();
+      if(logo&&logo.naturalWidth){ctx.save();ctx.beginPath();ctx.arc(cx,cy,R-14,0,7);ctx.clip();const lw=196,lh=lw*logo.naturalHeight/logo.naturalWidth;ctx.drawImage(logo,cx-lw/2,cy-lh/2,lw,lh);ctx.restore()}}
+    const bx=cx+R+10;
+    if(draw){ctx.fillStyle=NAVY;rr(ctx,bx,165,W-bx+40,112,18);ctx.fill();ctx.fillStyle=ORANGE;ctx.fillRect(bx+40,287,W-bx-40,10)}
+    ctx.font=`700 80px ${FD}`;const w1=ctx.measureText(o.t1).width;
+    txt(o.t1,bx+36,250,`700 80px ${FD}`,"#fff");txt(o.t2,bx+36+w1,250,`700 80px ${FD}`,ORANGE);
+    let y=345;
+    o.lineas.forEach((l,i)=>{txt(l,W-M,y,i?`600 28px ${F}`:`700 32px ${F}`,i?GRIS:NAVY,"right");y+=40});
+    y+=10;
+    (o.datos||[]).forEach(([k,v,cl],i)=>{
+      if(draw&&i%2===0){ctx.fillStyle="#eef2f8";ctx.fillRect(M,y,W-2*M,62)}
+      txt(k,M+22,y+42,`600 30px ${F}`,TINTA);txt(v,W-M-22,y+42,`700 32px ${F}`,cl==="malo"?"#c0392b":cl==="bien"?VERDE:NAVY,"right");y+=62});
+    if(o.total){y+=26;
+      if(draw){ctx.save();ctx.shadowColor="rgba(14,31,61,.35)";ctx.shadowBlur=18;ctx.shadowOffsetY=6;ctx.fillStyle=NAVY;rr(ctx,M,y,W-2*M,150,22);ctx.fill();ctx.restore()}
+      txt(o.total[0],M+36,y+88,`700 32px ${F}`,"#dbe8ff");txt(o.total[1],W-M-36,y+102,`700 76px ${F}`,"#fff","right");y+=150+20}
+    if(o.tabla&&o.tabla.filas.length){y+=16;const cols=o.tabla.cab.length,xs=[M+22];for(let i=1;i<cols;i++)xs.push(M+22+(W-2*M-44)*(i/(cols-1)));
+      if(draw){ctx.fillStyle=NAVY;rr(ctx,M,y,W-2*M,58,14);ctx.fill()}
+      o.tabla.cab.forEach((c,i)=>txt(c,i?xs[i]:xs[0],y+38,`700 24px ${F}`,"#fff",i?"right":"left"));y+=58;
+      o.tabla.filas.forEach((f,j)=>{if(draw){ctx.fillStyle=j%2?"#fff":"#eef2f8";ctx.fillRect(M,y,W-2*M,50)}
+        f.forEach((c,i)=>txt(String(c),i?xs[i]:xs[0],y+34,`600 24px ${F}`,TINTA,i?"right":"left"));y+=50});}
+    if(o.pie){ctx.font=`400 26px ${F}`;for(const l of lineas(ctx,o.pie,W-2*M)){y+=40;txt(l,M,y,`400 26px ${F}`,GRIS)}}
+    y+=40;
+    if(draw){ctx.fillStyle=NAVY;ctx.beginPath();ctx.moveTo(0,y+40);ctx.bezierCurveTo(320,y+110,700,y+20,W,y+60);ctx.lineTo(W,y+140);ctx.lineTo(0,y+140);ctx.fill();
+      ctx.strokeStyle=ORANGE;ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(-10,y+22);ctx.bezierCurveTo(320,y+92,700,y+2,W+10,y+40);ctx.stroke()}
+    return y+140;
+  });
+}
+function dibujarCierre(c){
+  const datos=[["Ventas",String(c.n)+(c.an?` (+${c.an} anuladas)`:"")]];
+  if(c.mod==="R"){datos.push(["Repuestos",money(c.R)],["Servicios",money(c.S)])}
+  PAGOS.forEach(p=>datos.push([sc(p),money(c.pago[p]||0)]));
+  datos.push(["Efectivo entregado",c.ef==null?"—":money(c.ef)]);
+  if(c.dif!=null)datos.push(["Diferencia",c.dif===0?"Cuadra":(c.dif<0?"Faltan ":"Sobran ")+money(Math.abs(c.dif)),c.dif===0?"bien":"malo"]);
+  return tarjeta({t1:"CIE",t2:"RRE",lineas:[MOD_NOM[c.mod]+" · "+title(c.veh),"Día "+fdm(c.f)+(c.ases?" · "+c.ases:""),"Enviado "+fdm(c.fecha)+" "+c.hora],
+    datos,total:["TOTAL VENDIDO",money(c.tot)],pie:(c.sin?`⚠ ${c.sin} línea(s) vendidas sin existencia en el sistema. `:"")+(c.obs?"Observaciones: "+c.obs:"")});
+}
+function cierresDelMes(veh,mod,mes){return Object.values(CIES).filter(c=>c&&c.fin&&c.mod===mod&&c.veh===veh&&c.f&&c.f.slice(0,7)===mes).sort((a,b)=>a.f.localeCompare(b.f))}
+function totalesMes(l){const t={dias:l.length,tot:0,ef:0,ent:0,dif:0,pago:{EFECTIVO:0,NEQUI:0,DAVIPLATA:0}};
+  l.forEach(c=>{t.tot+=c.tot;t.ef+=c.pago.EFECTIVO||0;t.ent+=c.ef||0;t.dif+=c.dif||0;PAGOS.forEach(p=>t.pago[p]+=c.pago[p]||0)});return t}
+const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const nomMes=m=>MESES[+m.slice(5,7)-1]+" "+m.slice(0,4);
+const difTxt=d=>d==null?"—":(d===0?"0":(d<0?"-":"+")+money(Math.abs(d)));
+function dibujarMes(veh,mod,mes){
+  const l=cierresDelMes(veh,mod,mes),t=totalesMes(l);
+  return tarjeta({t1:"MES ",t2:MESES[+mes.slice(5,7)-1].slice(0,3).toUpperCase(),lineas:[MOD_NOM[mod]+" · "+title(veh),"Resumen de "+nomMes(mes),"Generado "+hoy()],
+    datos:[["Días cerrados",String(t.dias)],...PAGOS.map(p=>[sc(p),money(t.pago[p])]),["Efectivo entregado",money(t.ent)],
+      ["Diferencia acumulada",t.dif===0?"Cuadra":(t.dif<0?"Faltan ":"Sobran ")+money(Math.abs(t.dif)),t.dif===0?"bien":"malo"]],
+    total:["TOTAL VENDIDO EN EL MES",money(t.tot)],
+    tabla:{cab:["Día","Vendido","Efectivo","Entregado","Dif."],filas:l.map(c=>[fdm(c.f).slice(0,5),money(c.tot),money(c.pago.EFECTIVO||0),c.ef==null?"—":money(c.ef),difTxt(c.dif)])},
+    pie:"Resumen informativo de MOTO-YA app. El cierre oficial del mes está en el SAM (RESUMEN_CIERRES)."});
+}
+
+// ===== Historial de cierres =====
+let HISMES=null;
+function pintarHistorial(){
+  const veh=state.veh,meses=[...new Set(Object.values(CIES).filter(c=>c&&c.fin&&c.veh===veh&&c.f).map(c=>c.f.slice(0,7)).concat([hoyISO().slice(0,7)]))].sort().reverse();
+  const mes=HISMES&&meses.includes(HISMES)?HISMES:meses[0];
+  $("vhis").innerHTML=`<div class="wrap vwrap">
+    <button type="button" class="volver" data-volver="home">← Menú</button>
+    <h2 class="vtit">Historial <span>${esc(title(veh))}</span></h2>
+    <label class="campo"><span>Mes</span><select id="hismes">${meses.map(m=>`<option value="${m}"${m===mes?" selected":""}>${nomMes(m)}</option>`).join("")}</select></label>
+    ${modsDe(veh).map(mod=>{const l=cierresDelMes(veh,mod,mes),t=totalesMes(l);return `
+      <div class="bloque">
+        <h3>${esc(MOD_NOM[mod])}</h3>
+        <div class="prow"><span>Días cerrados</span><b>${t.dias}</b></div>
+        <div class="prow"><span>Total vendido</span><b>${money(t.tot)}</b></div>
+        <div class="prow"><span>Efectivo vendido</span><b>${money(t.ef)}</b></div>
+        <div class="prow"><span>Efectivo entregado</span><b>${money(t.ent)}</b></div>
+        <div class="prow"><span>Diferencia acumulada</span><b class="${t.dif===0?"bien":"malo"}">${t.dif===0?"Cuadra":(t.dif<0?"Faltan ":"Sobran ")+money(Math.abs(t.dif))}</b></div>
+        ${l.length?`<div class="hisl">${l.map(c=>`<div class="hisi"><span>${fdm(c.f)}</span><span>${money(c.tot)}</span><span class="${c.dif?"malo":"bien"}">${c.dif===0?"✓":difTxt(c.dif)}</span>
+            <button type="button" class="btn mini gris" data-hisimg="${esc(claveCie(c.veh,c.f,c.mod))}">Imagen</button></div>`).join("")}</div>
+          <button type="button" class="btn wa" data-hismesimg="${mod}">Enviar resumen del mes (imagen)</button>`:'<p class="nota">No hay cierres enviados este mes.</p>'}
+      </div>`}).join("")}
+    <p class="nota">Aquí quedan los cierres enviados desde este celular. El cierre oficial del mes está en el SAM.</p>
+  </div>`;
 }
 
 // ===== Eventos =====
@@ -447,10 +595,20 @@ function conectarVentas(){
   $("hases").addEventListener("input",e=>{ls.set("motoya-asesor",e.target.value);COT.asesor=e.target.value;guardarCot()});
   $("goRep").addEventListener("click",()=>{if(!VEH.includes(state.veh)&&state.veh!=="BODEGA"){if(necesitaVeh())return}ver("app")});
   $("goTnd").addEventListener("click",()=>{if(necesitaVeh())return;ver("vtnd")});
-  $("goRec").addEventListener("click",()=>{if(necesitaVeh())return;LISTF=null;pintarLista();ver("vlist")});
+  $("goRec").addEventListener("click",()=>abrirVentas(null,false,"home"));
+  $("goHis").addEventListener("click",()=>{if(necesitaVeh())return;HISMES=null;pintarHistorial();ver("vhis")});
+  $("rVentas").addEventListener("click",()=>abrirVentas("R",true,"app"));
+  $("rCierre").addEventListener("click",()=>abrirCierre("R","app"));
+  $("tVentas").addEventListener("click",()=>abrirVentas("T",true,"vtnd"));
+  $("tCierre").addEventListener("click",()=>abrirCierre("T","vtnd"));
+  $("vsel").addEventListener("click",e=>{const b=e.target.closest("[data-abrircie]");if(b)abrirCierre(b.dataset.abrircie,"vsel")});
+  const vh=$("vhis");
+  vh.addEventListener("change",e=>{if(e.target.id==="hismes"){HISMES=e.target.value;pintarHistorial()}});
+  vh.addEventListener("click",e=>{let b=e.target.closest("[data-hisimg]");if(b){const c=CIES[b.dataset.hisimg];if(c)enviarImagen(()=>dibujarCierre(c),"Cierre_"+vcod(c.veh)+"_"+c.mod+"_"+c.f,"Cierre MOTO-YA");return}
+    b=e.target.closest("[data-hismesimg]");if(b){const mes=$("hismes").value,mod=b.dataset.hismesimg;enviarImagen(()=>dibujarMes(state.veh,mod,mes),"Mes_"+vcod(state.veh)+"_"+mod+"_"+mes,"Resumen del mes MOTO-YA")}});
   $("goCli").addEventListener("click",()=>{CLITAB=CLIS.some(c=>!c.g)?"p":"t";pintarClientes();ver("vcli")});
-  $("goCie").addEventListener("click",()=>{if(necesitaVeh())return;CIEF=null;pintarCierre();ver("vcie")});
-  $("hpend").addEventListener("click",e=>{if(e.target.closest("#hpendBtn")){CIEF=null;pintarCierre();ver("vcie")}});
+  $("goCie").addEventListener("click",()=>{if(necesitaVeh())return;pintarSelCierre();ver("vsel")});
+  $("hpend").addEventListener("click",e=>{if(e.target.closest("#hpendBtn")){pintarSelCierre();ver("vsel")}});
   $("toMenu").addEventListener("click",()=>ver("home"));
   $("ttoMenu").addEventListener("click",()=>ver("home"));
 
@@ -528,9 +686,11 @@ function conectarVentas(){
 
   // Cierre
   const vci=$("vcie");
-  vci.addEventListener("change",e=>{if(e.target.id==="cief"){CIEF=e.target.value;pintarCierre()}});
+  vci.addEventListener("change",e=>{if(e.target.id==="cief"){CIEF=e.target.value;CIEPEND=null;CIEARCH=null;pintarCierre()}});
   vci.addEventListener("input",e=>{if(e.target.id==="cieef"){e.target.value=e.target.value.replace(/\D/g,"");difCierre()}});
-  vci.addEventListener("click",e=>{if(e.target.closest("#cieenv"))enviarCierre(true);else if(e.target.closest("#cieresp"))enviarCierre(false)});
+  vci.addEventListener("click",e=>{if(e.target.closest("#cieenv"))enviarCierre(true);else if(e.target.closest("#cieresp"))enviarCierre(false);
+    else if(e.target.closest("#ciepimg"))enviarParte("img");else if(e.target.closest("#ciepfile"))enviarParte("txt")});
+  vci.addEventListener("input",e=>{if(e.target.id==="cieef"||e.target.id==="cieobs"){CIEARCH=null}});
 }
 // El carrito sigue al cobro (si vuelve atrás no pierde lo cambiado)
 function sincCarro(){if(!COB)return;
