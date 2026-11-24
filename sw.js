@@ -3,7 +3,7 @@
    - data.json: primero intenta internet (para tener precios y stock del día); si no hay señal, usa la última copia.
    - Fotos: se sirven desde el celular; solo se descargan la primera vez.
    Para publicar una versión nueva de la app, cambia VERSION. Para actualizar solo los datos, basta con subir data.json. */
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const SHELL = "motoya-app-" + VERSION;
 const DATA = "motoya-data";
 const IMG = "motoya-img-v1";
