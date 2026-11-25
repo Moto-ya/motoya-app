@@ -1,4 +1,4 @@
-{"v":"20261119235303","corte":"19 de noviembre de 2026, 23:53","veh":["MOTOCARRO R2","MOTOCARRO WALLY","VAN REPUESTERA"],"tv":["MOTOCARRO R2","MOTOCARRO WALLY"],"rutas":["ACOPI","ARROYOHONDO","CENCAR","GUABINAS / ZONA INDUSTRIAL","YUMBO - GALERÍA"],"rd":{"LUNES":"ACOPI","MARTES":"CENCAR","MIÉRCOLES":"ARROYOHONDO","JUEVES":"YUMBO - GALERÍA","VIERNES":"ACOPI","SÁBADO":"GUABINAS / ZONA INDUSTRIAL"},
+{"v":"20261125085836","corte":"25 de noviembre de 2026, 08:58","veh":["MOTOCARRO R2","MOTOCARRO WALLY","VAN REPUESTERA"],"tv":["MOTOCARRO R2","MOTOCARRO WALLY"],"rutas":["ACOPI","ARROYOHONDO","CENCAR","GUABINAS / ZONA INDUSTRIAL","YUMBO - GALERÍA"],"rd":{"LUNES":"ACOPI","MARTES":"CENCAR","MIÉRCOLES":"ARROYOHONDO","JUEVES":"YUMBO - GALERÍA","VIERNES":"ACOPI","SÁBADO":"GUABINAS / ZONA INDUSTRIAL"},
 "p":[
 {"c":"R016","cp":"19521","d":"PASTILLA FRENO DEL NARITA AK-110/125 SL/NKD (1017728)","mk":"NARITA","pr":"UND","venta":8000,"promo":7600,"min":5900,"f":"PASTILLAS DE FRENO","ojo":"Pastilla DELANTERA (freno de disco)","est":"SIN VALIDAR","ap":[["AKT","AK 110 S","",""],["AKT","AK 125 SL","",""],["AKT","NKD 125","",""]],"st":{"b":0,"m":[8,0,0],"g":["B1","",""]},"img":"R016.webp"},
 {"c":"R027","cp":"22572","d":"PASTILLA FRENO DEL NARITA NMAX 150/CRYPTON T115 FI (1017788)","mk":"NARITA","pr":"UND","venta":8000,"promo":7600,"min":5900,"f":"PASTILLAS DE FRENO","ojo":"Pastilla DELANTERA (freno de disco)","est":"SIN VALIDAR","ap":[["YAMAHA","CRYPTON 115 FI","",""],["YAMAHA","N-MAX 155","",""]],"st":{"b":0,"m":[5,0,0],"g":["C1","",""]},"img":"R027.webp"},
@@ -186,7 +186,7 @@
 {"c":"TD004","d":"BANANA SNOW MASTICABLE","cat":"DULCES","pr":"und","precio":200,"min":100,"st":[100,0]},
 {"c":"TD005","d":"CARAMELO LOKINO SURTIDO","cat":"DULCES","pr":"und","precio":200,"min":100,"st":[100,0]},
 {"c":"TD006","d":"CHICLE TUMIX MENTA","cat":"DULCES","pr":"und","precio":200,"min":200,"st":[100,0]},
-{"c":"TD007","d":"NÉCTAR PULP","cat":"BEBIDAS","pr":"250 ml","precio":2000,"min":1300,"st":[10,0]},
+{"c":"TD007","d":"NÉCTAR PULP","cat":"BEBIDAS","pr":"250 ml","precio":2500,"min":1300,"st":[10,0]},
 {"c":"TD008","d":"AGUA CIELO","cat":"BEBIDAS","pr":"300 ml","precio":1500,"min":600,"st":[24,0]},
 {"c":"TD009","d":"AGUA MIA","cat":"BEBIDAS","pr":"600 ml","precio":2000,"min":900,"st":[10,0]},
 {"c":"TD010","d":"AGUA MIA CON GAS","cat":"BEBIDAS","pr":"600 ml","precio":2500,"min":1000,"st":[10,0]},
